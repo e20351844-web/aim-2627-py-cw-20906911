@@ -45,7 +45,7 @@ def hp_ratio(hp, max_hp):
 
 def status_report(name, robot_type, hp, max_hp, battery):
     """TODO(Q1)：一行自检报告字符串；档位判定与逐字符格式见题面 Q1 规范。"""
-    hp_percentage = hp_ratio(hp,max_hp)
+    hp_percentage = hp_ratio(hp, max_hp)
     if battery >= 40:
         battery_status = "OK"
     elif battery >= 20:
@@ -63,7 +63,41 @@ print(status_report("Sentry-07","HERO",65, 100, 75))
 def analyze_damage_log(lines):
     """TODO(Q2)：解析混合格式伤害日志，返回固定契约的统计 dict；
     行格式、去重与统计口径见题面 Q2 规范。"""
-    raise NotImplementedError("Q2 analyze_damage_log：题面 Q2·多源日志解析与统计")
+    #先写下来最终需要的变量
+    total = 0
+    by_armor = {"front": 0, "left": 0, "right": 0}
+    seen_ids = set()#json去重用
+    valid_events_count = 0 #存储有效事件的数量，用于算avg
+    pass#感觉有点不会写了，先往下写写看
+    #脏行干嘛的，如何跳过，遍历循环
+    for line in lines:
+        line = line.strip()#先去掉首尾空格
+        #跳过脏行
+        if not line:
+            continue
+        elif line.startswith("#"):
+            continue
+        #尝试解析json
+        if line.startswith("{"):
+            try:
+                data = json.loads(line)
+            except continue#json解析失败，跳过脏行
+            armor = data.get("armor")
+            damage = data.get("damage")
+            if armor not in ("front", "left", "right"):
+                
+                continue  # 跳过无效事件
+            if not isinstance(damage, int) or damage < 0:
+                continue  # 跳过无效事件
+            if "id" in data:
+                if data["id"] in seen_ids:
+                    continue  # 跳过重复事件
+                seen_ids.add(data["id"])
+                total += damage
+                by_armor[armor] += damage
+                valid_events_count += 1
+        #解析传感器行
+        
 
 
 # ---------------------------------------------------------------------------
