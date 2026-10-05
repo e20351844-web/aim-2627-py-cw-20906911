@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """AIM 2627 Python Coursework —— 哨兵 Sentry 控制模块（学生骨架）。
-
 你的全部作业都在本文件里：按题面（题面.pdf）各题的规范补全每个标有 TODO 的函数。
 - 骨架已提供：Facing / SentryState 枚举、SentryGrid 的构造与只读属性、
   渲染函数 render_frame（demo 用，不进测试）。
@@ -247,10 +246,27 @@ class SentryGrid:
 # ---------------------------------------------------------------------------
 # Q4 贪心导航（题面 Q4·单步贪心导航策略）
 # ---------------------------------------------------------------------------
-def next_step_toward(pos, target, obstacles, current_facing=Facing.UP):
+def _q4_placeholder(pos, target, obstacles, current_facing=Facing.UP):
     """TODO(Q4)：返回下一步应朝向的 Facing；
     候选判定、优先级与回退规则见题面 Q4 规范。"""
-    raise NotImplementedError("Q4 next_step_toward：题面 Q4·贪心策略与回退")
+    #distance = abs(x1 - x2) + abs(y1 - y2)曼哈顿距离公式
+    def next_step_toward(pos, target, obstacles, current_facing=Facing.UP):
+        x, y = pos
+        tx, ty = target
+        dx, dy = tx - x, ty - y
+        directions = []
+        if abs(dx) >= abs(dy):
+            if dx: directions.append(Facing.RIGHT if dx > 0 else Facing.LEFT)
+            if dy: directions.append(Facing.UP if dy > 0 else Facing.DOWN)
+        else:
+            if dy: directions.append(Facing.UP if dy > 0 else Facing.DOWN)
+            if dx: directions.append(Facing.RIGHT if dx > 0 else Facing.LEFT)
+        blocked = set(obstacles)
+        for direction in directions:
+            cell = (x + direction.delta[0], y + direction.delta[1])
+            if cell not in blocked:
+                return direction
+        return current_facing
 
 
 # ---------------------------------------------------------------------------
