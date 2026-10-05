@@ -197,11 +197,12 @@ class SentryGrid:
     @current_pos.setter
     def current_pos(self, value):
         """TODO(Q3)：位置 setter；三重输入校验见题面 Q3 规范第 1 条。"""
-        if  isinstance(value, (tuple, list)) and len(value) == 2:
-            return self._clamp_cell(value)
-        else:
+        if not isinstance(value, (tuple, list)) or len(value) != 2:
             raise TypeError
-        tuple_value = tuple(value)
+        new_pos = self._clamp_cell(value)
+        if new_pos in self._obstacles:
+            raise ValueError("current_pos 不能位于障碍物上")
+        self._pos = new_pos
 
     def move_forward(self):
         """TODO(Q3)：朝当前 facing 前进一格，返回执行后的位置；
@@ -228,7 +229,8 @@ class SentryGrid:
             Facing.DOWN: Facing.RIGHT,
             Facing.RIGHT: Facing.UP
         }
-        return turn_left_mapping.get(self._facing, self._facing)
+        self._facing = turn_left_mapping[self._facing]
+        return self._facing
 
     def turn_right(self):
         """TODO(Q3)：原地右转 90°，返回新的 Facing（不耗电）。"""
@@ -238,9 +240,8 @@ class SentryGrid:
             Facing.DOWN: Facing.LEFT,
             Facing.LEFT: Facing.UP
         }
-        return turn_right_mapping.get(self._facing, self._facing)
-        if enemy_pos in self._obstacles:  
-            raise_ValueError("enemy_pos 不能位于障碍物上") 
+        self._facing = turn_right_mapping[self._facing]
+        return self._facing
 
 
 # ---------------------------------------------------------------------------
