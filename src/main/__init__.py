@@ -240,7 +240,8 @@ class SentryGrid:
             Facing.LEFT: Facing.UP
         }
         return turn_right_mapping.get(self._facing, self._facing)
-       
+        if enemy_pos in self._obstacles:  
+            raise_ValueError("enemy_pos 不能位于障碍物上") 
 
 
 # ---------------------------------------------------------------------------
