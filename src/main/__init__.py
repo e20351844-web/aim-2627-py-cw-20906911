@@ -198,20 +198,49 @@ class SentryGrid:
     @current_pos.setter
     def current_pos(self, value):
         """TODO(Q3)：位置 setter；三重输入校验见题面 Q3 规范第 1 条。"""
-        raise NotImplementedError("Q3 current_pos.setter：题面 Q3·位置校验三步")
+        if  isinstance(value, (tuple, list)) and len(value) == 2:
+            return self._clamp_cell(value)
+        else:
+            raise TypeError
+        tuple_value = tuple(value)
 
     def move_forward(self):
         """TODO(Q3)：朝当前 facing 前进一格，返回执行后的位置；
         碰撞、耗电与断电语义见题面 Q3 规范。"""
-        raise NotImplementedError("Q3 move_forward：题面 Q3·前进、碰撞与断电")
+        move_forward = self._clamp_cell((self._pos[0] + self._facing.delta[0], self._pos[1] + self._facing.delta[1]))
+        if self._fuel <= 0:
+            return self._pos
+        if self.is_blocked(move_forward[0], move_forward[1]):
+            self._collision_count += 1
+            self._fuel -= 1
+            return self._pos
+        if not self.is_blocked(move_forward[0], move_forward[1]):
+            self._pos = move_forward
+            self._fuel -= 1
+            if self._fuel <= 0:
+                move_forward = self._pos
+            return self._pos
 
     def turn_left(self):
         """TODO(Q3)：原地左转 90°，返回新的 Facing（不耗电）。"""
-        raise NotImplementedError("Q3 turn_left")
+        turn_left_mapping = {
+            Facing.UP: Facing.LEFT, 
+            Facing.LEFT: Facing.DOWN,
+            Facing.DOWN: Facing.RIGHT,
+            Facing.RIGHT: Facing.UP
+        }
+        return turn_left_mapping.get(self._facing, self._facing)
 
     def turn_right(self):
         """TODO(Q3)：原地右转 90°，返回新的 Facing（不耗电）。"""
-        raise NotImplementedError("Q3 turn_right")
+        turn_right_mapping = {
+            Facing.UP: Facing.RIGHT, 
+            Facing.RIGHT: Facing.DOWN,
+            Facing.DOWN: Facing.LEFT,
+            Facing.LEFT: Facing.UP
+        }
+        return turn_right_mapping.get(self._facing, self._facing)
+       
 
 
 # ---------------------------------------------------------------------------
