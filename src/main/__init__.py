@@ -286,7 +286,59 @@ class SentryState(Enum):
 def decide(sensor, state, hp, heat):
     """TODO(Q5)：纯函数决策，返回 (action: str, new_state: SentryState)；
     sensor 字段契约、R1-R7 规则表与非法输入处理见题面 Q5 规范。"""
-    raise NotImplementedError("Q5 decide：题面 Q5·决策规则表 R1-R7")
+    # Validate the decision contract up front.  Keeping this function pure makes
+    # malformed sensor packets fail deterministically instead of being treated
+    # as a false negative.
+    if not isinstance(sensor, dict):
+        raise ValueError("sensor must be a dict")
+    if not isinstance(state, SentryState):
+        raise ValueError("state must be a SentryState")
+    frames = sensor.get("enemy_frames")
+    if not isinstance(frames, (tuple, list)) or not frames:
+        raise ValueError("enemy_frames must be a non-empty sequence")
+    if any(type(flag) is not bool for flag in frames):
+        raise ValueError("enemy_frames must contain booleans")
+    distance = sensor.get("enemy_dist")
+    if distance is not None or any(flag for flag in frames):
+        if distance is not None and (isinstance(distance, bool)
+                                     or not isinstance(distance, (int, float))
+                                     or distance < 0):
+            raise ValueError("enemy_dist must be a non-negative number or None")
+    if not isinstance(sensor.get("robot_type"), str) or not sensor["robot_type"]:
+        raise ValueError("robot_type must be a non-empty string")
+    max_hp = sensor.get("max_hp")
+    if isinstance(max_hp, bool) or not isinstance(max_hp, (int, float)) or max_hp <= 0:
+        raise ValueError("max_hp must be positive")
+    if isinstance(hp, bool) or not isinstance(hp, (int, float)):
+        raise ValueError("hp must be numeric")
+    if isinstance(heat, bool) or not isinstance(heat, (int, float)):
+        raise ValueError("heat must be numeric")
+
+    visible = bool(frames[-1])
+    confirmed = len(frames) >= 2 and frames[-1] and frames[-2]
+    low_hp = hp / max_hp <= 0.30
+
+    if state is SentryState.PATROL:
+        return (("SCAN", SentryState.SUSPECT) if visible
+                else ("PATROL_MOVE", SentryState.PATROL))
+    if state is SentryState.SUSPECT:
+        if confirmed and visible:
+            return ("SHOOT", SentryState.ENGAGE)
+        return (("SCAN", SentryState.SUSPECT) if visible
+                else ("PATROL_MOVE", SentryState.PATROL))
+    if state is SentryState.ENGAGE:
+        if low_hp:
+            return ("RETREAT", SentryState.RETREAT)
+        if heat >= 80:
+            return ("COOL", SentryState.ENGAGE)
+        if visible:
+            return ("SHOOT", SentryState.ENGAGE)
+        return ("SCAN", SentryState.SUSPECT)
+    if state is SentryState.RETREAT:
+        return (("RETURN", SentryState.RETURN) if not visible and not low_hp
+                else ("RETREAT", SentryState.RETREAT))
+    # RETURN: one movement command completes the transition to patrol.
+    return ("MOVE_BASE", SentryState.PATROL)
 
 
 # ---------------------------------------------------------------------------
