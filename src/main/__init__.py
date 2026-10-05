@@ -61,48 +61,61 @@ print(status_report("Sentry-07","HERO",65, 100, 75))
 # Q2 战斗日志分析（题面 Q2·多源日志解析与统计）
 # ---------------------------------------------------------------------------
 def analyze_damage_log(lines):
-    """TODO(Q2)：解析混合格式伤害日志，返回固定契约的统计 dict；
-    行格式、去重与统计口径见题面 Q2 规范。"""
-    #先写下来最终需要的变量
     total = 0
     by_armor = {"front": 0, "left": 0, "right": 0}
-    seen_ids = set()#json去重用
-    valid_events_count = 0 #存储有效事件的数量，用于算avg
-    pass#感觉有点不会写了，先往下写写看
-    #脏行干嘛的，如何跳过，遍历循环
-    for line in lines:
-        line = line.strip()#先去掉首尾空格
-        #跳过脏行
-        if not line:
+    seen_ids = set()
+    count = 0
+    for raw_line in lines:
+        line = str(raw_line).strip()
+        if not line or line.startswith("#"):
             continue
-        elif line.startswith("#"):
-            continue
-        #尝试解析json
         if line.startswith("{"):
             try:
                 data = json.loads(line)
-            except continue#json解析失败，跳过脏行
-            armor = data.get("armor")
-            damage = data.get("damage")
-            if armor not in ("front", "left", "right"):
-                
-                continue  # 跳过无效事件
-            if not isinstance(damage, int) or damage < 0:
-                continue  # 跳过无效事件
+            except (TypeError, ValueError, json.JSONDecodeError):
+                continue
+            if not isinstance(data, dict):
+                continue
+            armor, damage = data.get("armor"), data.get("damage")
+            if (armor not in by_armor or isinstance(damage, bool)
+                    or not isinstance(damage, int) or damage < 0):
+                continue
             if "id" in data:
                 if data["id"] in seen_ids:
-                    continue  # 跳过重复事件
+                    continue
                 seen_ids.add(data["id"])
-                total += damage
-                by_armor[armor] += damage
-                valid_events_count += 1
-        #解析传感器行
+            by_armor[armor] += damage
+            total += damage
+            count += 1
+            continue
+        mapping = {"F": "front", "L": "left", "R": "right"}
+        parsed = []
+        for part in line.split(","):
+            fields = part.strip().split(":")
+            if (len(fields) != 2 or fields[0] not in mapping
+                    or not fields[1].isdigit() or int(fields[1]) <= 0):
+                parsed = []
+                break
+            parsed.append((mapping[fields[0]], int(fields[1])))
+        for armor, damage in parsed:
+            by_armor[armor] += damage
+            total += damage
+            count += 1
+    return {"total": total, "by_armor": by_armor,
+            "most_hit": max(by_armor, key=by_armor.get) if count else None,
+            "avg": round(total / count, 2) if count else 0.0}
+'''
+    """TODO(Q2)：解析混合格式伤害日志，返回固定契约的统计 dict；
+    行格式、去重与统计口径见题面 Q2 规范。"""
+    
         
 
 
 # ---------------------------------------------------------------------------
 # Q3 SentryGrid（题面 Q3·载体物理规则）
 # ---------------------------------------------------------------------------
+'''
+
 class SentryGrid:
     """哨兵仿真载体（构造与只读属性已提供；四个 TODO 方法由你实现）。"""
 
