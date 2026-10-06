@@ -51,7 +51,8 @@ def status_report(name, robot_type, hp, max_hp, battery):
         battery_status = "WARNING"
     else:
         battery_status = "LOW"
-    return f"{name:<10}| {robot_type:^10}|HP {hp_percentage:>3}%|BAT {battery:>3}%|{battery_status}"
+    return (f"{name:<10}|{robot_type:^10}|HP {hp_percentage:>3}%"
+            f"|BAT {battery:>3}%|{battery_status}")
 print(status_report("Sentry-07","HERO",65, 100, 75))
 
 
@@ -82,9 +83,16 @@ def analyze_damage_log(lines):
                     or not isinstance(damage, int) or damage < 0):
                 continue
             if "id" in data:
-                if data["id"] in seen_ids:
+                try:
+                    duplicate = data["id"] in seen_ids
+                except TypeError:
+                    duplicate = False
+                if duplicate:
                     continue
-                seen_ids.add(data["id"])
+                try:
+                    seen_ids.add(data["id"])
+                except TypeError:
+                    pass
             by_armor[armor] += damage
             total += damage
             count += 1
@@ -207,7 +215,8 @@ class SentryGrid:
     def move_forward(self):
         """TODO(Q3)：朝当前 facing 前进一格，返回执行后的位置；
         碰撞、耗电与断电语义见题面 Q3 规范。"""
-        move_forward = self._clamp_cell((self._pos[0] + self._facing.delta[0], self._pos[1] + self._facing.delta[1]))
+        move_forward = (self._pos[0] + self._facing.delta[0],
+                        self._pos[1] + self._facing.delta[1])
         if self._fuel <= 0:
             return self._pos
         if self.is_blocked(move_forward[0], move_forward[1]):
@@ -374,8 +383,6 @@ def run_patrol(grid, max_steps=500):
     """TODO(Q6)：sense → decide → act 主循环；
     循环结构、终止条件、脱困自由度与统计返回契约见题面 Q6 规范。"""
     steps = 0
-    trail = set()
-    start = grid.current_pos
     while steps < max_steps and grid.fuel > 0 and not grid.found_enemy:
         path_len = bfs_path_length(grid.current_pos, grid.enemy_pos,
                                    grid.obstacles | _grid_border(grid))
@@ -401,12 +408,10 @@ def run_patrol(grid, max_steps=500):
         else:
             for _ in range(diff):
                 grid.turn_right()
-        trail.add(pos)
         grid.move_forward()
         steps += 1
     return {"success": grid.found_enemy, "steps": steps,
-            "collisions": grid.collision_count, "fuel": grid.fuel,
-            "start": start, "end": grid.current_pos}
+            "collisions": grid.collision_count}
 
 
 
