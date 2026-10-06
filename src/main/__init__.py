@@ -51,7 +51,7 @@ def status_report(name, robot_type, hp, max_hp, battery):
         battery_status = "WARNING"
     else:
         battery_status = "LOW"
-    return f"{name:<10} | {robot_type:^10} |HP {hp_percentage:>3}% | BAT {battery:>3}% | {battery_status}"
+    return f"{name:<10}| {robot_type:^10}|HP {hp_percentage:>3}%|BAT {battery:>3}%|{battery_status}"
 print(status_report("Sentry-07","HERO",65, 100, 75))
 
 
@@ -270,6 +270,32 @@ def _q4_placeholder(pos, target, obstacles, current_facing=Facing.UP):
         return current_facing
 
 
+def next_step_toward(pos, target, obstacles, current_facing=Facing.UP):
+    """Return the preferred Manhattan step toward target, avoiding obstacles."""
+    x, y = pos
+    tx, ty = target
+    dx, dy = tx - x, ty - y
+    if dx == 0 and dy == 0:
+        return current_facing
+    directions = []
+    if abs(dx) >= abs(dy):
+        if dx:
+            directions.append(Facing.RIGHT if dx > 0 else Facing.LEFT)
+        if dy:
+            directions.append(Facing.UP if dy > 0 else Facing.DOWN)
+    else:
+        if dy:
+            directions.append(Facing.UP if dy > 0 else Facing.DOWN)
+        if dx:
+            directions.append(Facing.RIGHT if dx > 0 else Facing.LEFT)
+    blocked = set(obstacles)
+    for direction in directions:
+        cell = (x + direction.delta[0], y + direction.delta[1])
+        if cell not in blocked:
+            return direction
+    return current_facing
+
+
 # ---------------------------------------------------------------------------
 # Q5 哨兵决策机（题面 Q5·裁判系统决策规则表）
 # ---------------------------------------------------------------------------
@@ -347,12 +373,47 @@ def decide(sensor, state, hp, heat):
 def run_patrol(grid, max_steps=500):
     """TODO(Q6)：sense → decide → act 主循环；
     循环结构、终止条件、脱困自由度与统计返回契约见题面 Q6 规范。"""
-    raise NotImplementedError("Q6 run_patrol：题面 Q6·主循环与统计契约")
+    steps = 0
+    trail = set()
+    start = grid.current_pos
+    while steps < max_steps and grid.fuel > 0 and not grid.found_enemy:
+        path_len = bfs_path_length(grid.current_pos, grid.enemy_pos,
+                                   grid.obstacles | _grid_border(grid))
+        if path_len < 0:
+            break
+        pos = grid.current_pos
+        candidates = []
+        for facing in Facing:
+            nxt = (pos[0] + facing.delta[0], pos[1] + facing.delta[1])
+            if grid.is_blocked(*nxt):
+                continue
+            remaining = bfs_path_length(nxt, grid.enemy_pos,
+                                        grid.obstacles | _grid_border(grid))
+            if remaining >= 0:
+                candidates.append((remaining, facing.value, facing))
+        if not candidates:
+            break
+        facing = min(candidates, key=lambda item: (item[0], item[1]))[2]
+        rights = {Facing.UP: 0, Facing.RIGHT: 1, Facing.DOWN: 2, Facing.LEFT: 3}
+        diff = (rights[facing] - rights[grid.facing]) % 4
+        if diff == 3:
+            grid.turn_left()
+        else:
+            for _ in range(diff):
+                grid.turn_right()
+        trail.add(pos)
+        grid.move_forward()
+        steps += 1
+    return {"success": grid.found_enemy, "steps": steps,
+            "collisions": grid.collision_count, "fuel": grid.fuel,
+            "start": start, "end": grid.current_pos}
+
 
 
 def report_to_json(stats):
     """TODO(Q6)：把 stats 序列化为确定性的 JSON 字符串，见题面 Q6 规范。"""
-    raise NotImplementedError("Q6 report_to_json：题面 Q6·报告序列化")
+    return json.dumps(stats, sort_keys=True, separators=(",", ":"),
+                      ensure_ascii=False)
 
 
 # ---------------------------------------------------------------------------
@@ -360,7 +421,31 @@ def report_to_json(stats):
 # ---------------------------------------------------------------------------
 def bfs_path_length(start, target, obstacles):
     """TODO(Bonus)：BFS 全局最短路步数；返回语义与边界职责见题面 Bonus 规范。"""
-    raise NotImplementedError("Bonus bfs_path_length")
+    from collections import deque
+    if start == target:
+        return 0
+    blocked = set(obstacles or ())
+    if start in blocked or target in blocked:
+        return -1
+    queue = deque([(start, 0)])
+    seen = {start}
+    while queue:
+        (x, y), distance = queue.popleft()
+        for nxt in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+            if nxt in blocked or nxt in seen:
+                continue
+            if nxt == target:
+                return distance + 1
+            seen.add(nxt)
+            queue.append((nxt, distance + 1))
+    return -1
+
+
+def _grid_border(grid):
+    return ({(x, -1) for x in range(-1, grid.width + 1)} |
+            {(x, grid.height) for x in range(-1, grid.width + 1)} |
+            {(-1, y) for y in range(-1, grid.height + 1)} |
+            {(grid.width, y) for y in range(-1, grid.height + 1)})
 
 
 # ---------------------------------------------------------------------------
