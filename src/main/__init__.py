@@ -39,7 +39,6 @@ def hp_ratio(hp, max_hp):
         return 0
     ratio = (hp / max_hp) * 100
     return int(max(0, min(100, ratio)))
-    
 
 
 def status_report(name, robot_type, hp, max_hp, battery):
@@ -53,8 +52,9 @@ def status_report(name, robot_type, hp, max_hp, battery):
         battery_status = "LOW"
     return (f"{name:<10}|{robot_type:^10}|HP {hp_percentage:>3}%"
             f"|BAT {battery:>3}%|{battery_status}")
-print(status_report("Sentry-07","HERO",65, 100, 75))
 
+
+print(status_report("Sentry-07", "HERO", 65, 100, 75))
 
 
 # ---------------------------------------------------------------------------
@@ -62,6 +62,8 @@ print(status_report("Sentry-07","HERO",65, 100, 75))
 # ---------------------------------------------------------------------------
 """TODO(Q2)：解析混合格式伤害日志，返回固定契约的统计 dict；
     行格式、去重与统计口径见题面 Q2 规范。"""
+
+
 def analyze_damage_log(lines):
     total = 0
     by_armor = {"front": 0, "left": 0, "right": 0}
@@ -113,6 +115,8 @@ def analyze_damage_log(lines):
     return {"total": total, "by_armor": by_armor,
             "most_hit": max(by_armor, key=by_armor.get) if count else None,
             "avg": round(total / count, 2) if count else 0.0}
+
+
 '''
     
         
@@ -120,6 +124,7 @@ def analyze_damage_log(lines):
 # Q3 SentryGrid（题面 Q3·载体物理规则）
 # ---------------------------------------------------------------------------
 '''
+
 
 class SentryGrid:
     """哨兵仿真载体（构造与只读属性已提供；四个 TODO 方法由你实现）。"""
@@ -233,7 +238,7 @@ class SentryGrid:
     def turn_left(self):
         """TODO(Q3)：原地左转 90°，返回新的 Facing（不耗电）。"""
         turn_left_mapping = {
-            Facing.UP: Facing.LEFT, 
+            Facing.UP: Facing.LEFT,
             Facing.LEFT: Facing.DOWN,
             Facing.DOWN: Facing.RIGHT,
             Facing.RIGHT: Facing.UP
@@ -244,7 +249,7 @@ class SentryGrid:
     def turn_right(self):
         """TODO(Q3)：原地右转 90°，返回新的 Facing（不耗电）。"""
         turn_right_mapping = {
-            Facing.UP: Facing.RIGHT, 
+            Facing.UP: Facing.RIGHT,
             Facing.RIGHT: Facing.DOWN,
             Facing.DOWN: Facing.LEFT,
             Facing.LEFT: Facing.UP
@@ -259,18 +264,22 @@ class SentryGrid:
 def _q4_placeholder(pos, target, obstacles, current_facing=Facing.UP):
     """TODO(Q4)：返回下一步应朝向的 Facing；
     候选判定、优先级与回退规则见题面 Q4 规范。"""
-    #distance = abs(x1 - x2) + abs(y1 - y2)曼哈顿距离公式
+    # distance = abs(x1 - x2) + abs(y1 - y2)曼哈顿距离公式
     def next_step_toward(pos, target, obstacles, current_facing=Facing.UP):
         x, y = pos
         tx, ty = target
         dx, dy = tx - x, ty - y
         directions = []
         if abs(dx) >= abs(dy):
-            if dx: directions.append(Facing.RIGHT if dx > 0 else Facing.LEFT)
-            if dy: directions.append(Facing.UP if dy > 0 else Facing.DOWN)
+            if dx:
+                directions.append(Facing.RIGHT if dx > 0 else Facing.LEFT)
+            if dy:
+                directions.append(Facing.UP if dy > 0 else Facing.DOWN)
         else:
-            if dy: directions.append(Facing.UP if dy > 0 else Facing.DOWN)
-            if dx: directions.append(Facing.RIGHT if dx > 0 else Facing.LEFT)
+            if dy:
+                directions.append(Facing.UP if dy > 0 else Facing.DOWN)
+            if dx:
+                directions.append(Facing.RIGHT if dx > 0 else Facing.LEFT)
         blocked = set(obstacles)
         for direction in directions:
             cell = (x + direction.delta[0], y + direction.delta[1])
@@ -338,7 +347,8 @@ def decide(sensor, state, hp, heat):
         if distance is not None and (isinstance(distance, bool)
                                      or not isinstance(distance, (int, float))
                                      or distance < 0):
-            raise ValueError("enemy_dist must be a non-negative number or None")
+            raise ValueError(
+                "enemy_dist must be a non-negative number or None")
     if not isinstance(sensor.get("robot_type"), str) or not sensor["robot_type"]:
         raise ValueError("robot_type must be a non-empty string")
     max_hp = sensor.get("max_hp")
@@ -401,7 +411,8 @@ def run_patrol(grid, max_steps=500):
         if not candidates:
             break
         facing = min(candidates, key=lambda item: (item[0], item[1]))[2]
-        rights = {Facing.UP: 0, Facing.RIGHT: 1, Facing.DOWN: 2, Facing.LEFT: 3}
+        rights = {Facing.UP: 0, Facing.RIGHT: 1,
+                  Facing.DOWN: 2, Facing.LEFT: 3}
         diff = (rights[facing] - rights[grid.facing]) % 4
         if diff == 3:
             grid.turn_left()
@@ -412,7 +423,6 @@ def run_patrol(grid, max_steps=500):
         steps += 1
     return {"success": grid.found_enemy, "steps": steps,
             "collisions": grid.collision_count}
-
 
 
 def report_to_json(stats):
