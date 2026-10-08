@@ -50,8 +50,8 @@ def status_report(name, robot_type, hp, max_hp, battery):
         battery_status = "WARNING"
     else:
         battery_status = "LOW"
-    return (f"{name:<10}|{robot_type:^10}|HP {hp_percentage:>3}%"
-            f"|BAT {battery:>3}%|{battery_status}")
+    return (f"{name:<10}|{robot_type:^10}|HP {hp_percentage:>3}%"f"|BAT {battery:>3}%|{battery_status}")
+            
 
 
 print(status_report("Sentry-07", "HERO", 65, 100, 75))
@@ -72,8 +72,8 @@ def analyze_damage_log(lines):
     for raw_line in lines:
         line = str(raw_line).strip()
         if not line or line.startswith("#"):
-            continue
-        if line.startswith("{"):
+            continue#如果是空行或注释，跳过此次循环
+        if line.startswith("{"):#在字符串里，以{开头的只能是json行了，所以下面要解析json行
             try:
                 data = json.loads(line)
             except (TypeError, ValueError, json.JSONDecodeError):
@@ -98,7 +98,7 @@ def analyze_damage_log(lines):
             by_armor[armor] += damage
             total += damage
             count += 1
-            continue
+            continue#json行解析完毕
         mapping = {"F": "front", "L": "left", "R": "right"}
         parsed = []
         for part in line.split(","):
