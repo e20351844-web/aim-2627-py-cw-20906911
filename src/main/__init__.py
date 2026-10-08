@@ -53,7 +53,6 @@ def status_report(name, robot_type, hp, max_hp, battery):
     return (f"{name:<10}|{robot_type:^10}|HP {hp_percentage:>3}%"f"|BAT {battery:>3}%|{battery_status}")
 
 
-
 print(status_report("Sentry-07", "HERO", 65, 100, 75))
 
 
